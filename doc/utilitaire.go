@@ -1,39 +1,66 @@
-package main 
+package main
 
-word := chooseRandomWord(words)
+import (
+	"bufio"
+	"math/rand"
+	"os"
+	"strings"
+	"time"
+)
 
-	hiddenWord := initializeHiddenWord(word)
-	usedLetters := make(map[rune]bool)
-	errors := 0
+func readWordsFile(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-	reader := bufio.NewReader(os.Stdin)
-	for errors < maxErrors && !isWordComplete(hiddenWord) {
-		displayGameState(hiddenWord, usedLetters, errors)
+	var words []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		words = append(words, strings.TrimSpace(scanner.Text()))
+	}
 
-		fmt.Print("Entrez une lettre ou un mot complet: ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(strings.ToLower(input))
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
 
-		if len(input) == 1 {
-			letter := rune(input[0])
-			if usedLetters[letter] {
-				fmt.Println("Vous avez déjà proposé cette lettre.")
-				continue
-			}
-			usedLetters[letter] = true
+	return words, nil
+}
 
-			if strings.ContainsRune(word, letter) {
-				hiddenWord = updateHiddenWord(word, hiddenWord, letter)
-			} else {
-				errors++
-				fmt.Println("Lettre incorrecte!")
-			}
-		} else if len(input) > 1 {
-			if input == word {
-				hiddenWord = word
-			} else {
-				errors++
-				fmt.Println("Mot incorrect!")
-			}
+func chooseRandomWord(words []string) string {
+	rand.Seed(time.Now().UnixNano())
+	return words[rand.Intn(len(words))]
+}
+
+func initializeHiddenWord(word string) string {
+	hidden := make([]rune, len(word))
+	for i := range hidden {
+		hidden[i] = '_'
+	}
+	return string(hidden)
+}
+
+func updateHiddenWord(word, hiddenWord string, letter rune) string {
+	result := []rune(hiddenWord)
+	for i, char := range word {
+		if char == letter {
+			result[i] = letter
 		}
 	}
+	return string(result)
+}
+
+func isWordComplete(hiddenWord string) bool {
+	return !strings.ContainsRune(hiddenWord, '_')
+}
+
+func displayGameState(hiddenWord string, usedLetters map[rune]bool, errors int) {
+	fmt.Printf("\nMot: %s\n", hiddenWord)
+	fmt.Printf("Erreurs: %d/%d\n", errors, maxErrors)
+	fmt.Print("Lettres utilisées: ")
+	for letter := range usedLetters {
+		fmt.Printf("%c ", letter)
+	}
+	fmt.Println()
+}
