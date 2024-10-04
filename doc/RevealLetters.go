@@ -1,22 +1,26 @@
-package main
+package hangman
 
 import (
 	"math/rand"
+	"time"
 )
 
-func revealRandomLetters(word, hiddenWord string, count int) string {
-	revealed := []rune(hiddenWord)
-	indexes := rand.Perm(len(word))
-	
-	for _, i := range indexes {
-		if count == 0 {
-			break
-		}
-		if revealed[i] == '_' {
-			revealed[i] = rune(word[i])
-			count--
+func RevealRandomLetters(word string) []string {
+	rand.Seed(time.Now().UnixNano())
+	letters := make([]string, len(word))
+	for i := range letters {
+		letters[i] = "_"
+	}
+
+	numToReveal := len(word)/2 - 1
+	for i := 0; i < numToReveal; i++ {
+		index := rand.Intn(len(word))
+		if letters[index] == "_" {
+			letters[index] = string(word[index])
+		} else {
+			i-- // Try again if this letter was already revealed
 		}
 	}
-	
-	return string(revealed)
+
+	return letters
 }
